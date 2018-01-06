@@ -1,41 +1,83 @@
 package client;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.net.Socket;
+import java.util.Scanner; 
+
 import common.Board;
-import common.BoardVisualisator;
 
+/**
+ * Client manager class
+ * Handle the main loop, client data an connection.
+ * @author Amélia Chavot
+ *
+ */
 public class ClientManager {
+	//
+	/// Class attributs
+	private boolean 			myClientRunning 	= false;
+	MenuManager 		myMenu				= new MenuManager();
+	private Board				myGameBoard			= new Board(15, 15, 2, 3, 3, 500.0f);
+	Scanner 			myScan 				= new Scanner(System.in);
 
-	private boolean 		clientConnected = false;
-	private MenuManager 	myMenu			= new MenuManager();
-	private Board			myGameBoard		= new Board(15, 15, 2, 3, 3, 500.0f);
-			
+	//
+	/// Network attributs
+	String 				myServerAdress 	= null;
+	int 				myServerPort;
+	
+	DataInputStream 	myInStream 				= null;
+	DataOutputStream	myOutStream 			= null;
+	Socket 				myClientSocket 			= null;
+	
+	//
+	/// game loop
 	public void MainLoop() {
 		//
 		/// Start with the first Menu State
 		myMenu.PrintPage(MenuState.WELCOME_MENU);
 		
-		BoardVisualisator.printBoard(myGameBoard);
+		//////////////////
+		//
+		/// TEST ONLY
+		//BoardVisualisator.printBoard(myGameBoard);
 		
-		myGameBoard.PlayATurn();
+		//myGameBoard.PlayATurn();
 		
-		BoardVisualisator.printBoard(myGameBoard);
-
+		//BoardVisualisator.printBoard(myGameBoard);
+		//////////////////
+		
+		//
+		/// Connect the player to a server
+		ClientNetworkInterface.ConnectThePlayer(this);
+		
+		
+		ClientNetworkInterface.AskTheServerToStartAGame(this);
+		
 		//
 		/// Launch the game loop
-		while(clientConnected)
+		while(myClientRunning)
 		{
 			//
-			/// Print current screen
-			myMenu.PrintCurrentPage();
-			//
-			/// Get the client input
-			myMenu.GetClientAction();
+			/// TODO Print the server info
 			
 			//
-			/// Update the informations
+			/// TODO Check for a pause
 			
-			clientConnected = false;			
+				//
+				/// Ask for pause command			
+				myClientRunning = false;			
 		}
+		
+		QuitApp();
 	}
 
+	
+	
+	public void QuitApp()
+	{
+		myScan.close();
+		ClientNetworkInterface.closeConnections(myClientSocket);
+		System.exit(0);
+	}
 }

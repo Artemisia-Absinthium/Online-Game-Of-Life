@@ -1,17 +1,18 @@
 package common;
 
 public enum NetworkMessageType {
-	NETWORK_MESSAGE_CONNECT				("Connection"),
-	NETWORK_MESSAGE_STOP				("Stop"),
-	NETWORK_MESSAGE_BOARD_UPDATE_DATA	("Board update data");
+	NETWORK_MESSAGE_CONNECT				(0),
+	NETWORK_MESSAGE_STOP				(1),
+	NETWORK_MESSAGE_BOARD_UPDATE_DATA	(2),
+	NETWORK_MESSAGE_OK					(3);
   
-	private String myName = "";
+	private int 	myValue = 0;
 
-	NetworkMessageType(String name) {
-		this.myName = name;
+	NetworkMessageType(int name) {
+		this.myValue = name;
 	}
 
-	public String toString(){
-	    return myName;
+	public int getValue(){
+	    return myValue;
 	}
 }

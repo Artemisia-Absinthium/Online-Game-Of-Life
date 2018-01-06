@@ -5,8 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Board {
 	private int 	myBoardWidth;
@@ -18,7 +18,7 @@ public class Board {
 	private float 	myRefreshRateInMs;
 	private boolean	myLivingStatusOnBorder = false;
 	
-	private	ArrayList<ArrayList<Boolean>> board;
+	private	ArrayList<ArrayList<Boolean>> myBoard;
 	
 	public Board(int width, int height, int minNeighbours, int maxNeighbours, int numberOfNeighboursToBeBorn, float boardRefreshRate)
 	{
@@ -30,31 +30,48 @@ public class Board {
 		myBoardCurrentIteration = 0; 
 		myNumberOfNeighboursToBeBorn = numberOfNeighboursToBeBorn;
 		
-		board = new ArrayList<ArrayList<Boolean>>();
-		for(int row = 0; row < height; ++row)
-		{
-			ArrayList<Boolean> currentRow = new ArrayList<Boolean>();
-			for(int column = 0; column < width; ++column)
-			{
-				currentRow.add(false);
-			}
-			board.add(currentRow);
-		}
+		myBoard = new ArrayList<ArrayList<Boolean>>();
+		InitBoardFromRandomSeed();
 	}
 	
 	public void InitBoardFromRandomSeed()
 	{
+		DeleteBoard();
 		
+		Random rand = new Random(System.currentTimeMillis());
+		
+		myBoard = new ArrayList<ArrayList<Boolean>>();
+		for(int row = 0; row < myBoardHeight; ++row)
+		{
+			ArrayList<Boolean> currentRow = new ArrayList<Boolean>();
+			for(int column = 0; column < myBoardWidth; ++column)
+			{
+				currentRow.add(rand.nextBoolean());
+			}
+			myBoard.add(currentRow);
+		}
 	}
 	
 	public void InitBoardFromSeed(int seed)
 	{
-		
+		Random rand = new Random(seed);
 	}
 	
 	public void InitBoardFromFile()
 	{
 		
+	}
+	
+	public void DeleteBoard()
+	{	
+		final int rowSIze = myBoard.size();
+		for(int row = 0; row < rowSIze; ++row)
+		{
+			ArrayList<Boolean> currentRow = myBoard.get(row);
+			currentRow.clear();
+		}
+		
+		myBoard.clear();
 	}
 	
 	public void UpdateBoardFromNetworkMessage(ByteArrayOutputStream dataStream/*GameCommunicationData message*/)
@@ -67,7 +84,7 @@ public class Board {
 			{
 				int row = inputStream.readInt();
 				int column = inputStream.readInt();
-				board.get(row).set(column, !board.get(row).get(column));
+				myBoard.get(row).set(column, !myBoard.get(row).get(column));
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -166,6 +183,6 @@ public class Board {
 			return myLivingStatusOnBorder;
 		}
 		
-		return board.get(row).get(column);
+		return myBoard.get(row).get(column);
 	}
 }
