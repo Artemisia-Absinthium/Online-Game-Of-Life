@@ -8,7 +8,8 @@ public enum NetworkMessageType {
 	NETWORK_MESSAGE_START				(4),
 	NETWORK_MESSAGE_OK_STARTED			(5),
 	NETWORK_MESSAGE_OK_NOT_STARTED		(6),
-	NETWORK_MESSAGE_KO					(7);
+	NETWORK_MESSAGE_KO					(7),
+	NETWORK_MESSAGE_FULL_BOARD			(8);
 	
 	private int 	myValue = 0;
 

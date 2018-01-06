@@ -3,6 +3,8 @@ package common;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 import server.ServerManager;
 
@@ -28,18 +30,61 @@ public class GameCommunicationData {
 		return message.array();
 	}
 	
-	public static void ReadAStartMessage(ServerManager serverManager)
+	public static void ReadAStartMessage(SocketChannel socket)
 	{
 		try {
-			ServerManager.board.myBoardWidth = serverManager.myInStream.readInt();
-			ServerManager.board.myBoardHeight = serverManager.myInStream.readInt();
-			ServerManager.board.myMinimumNeighboursToLive = serverManager.myInStream.readInt();
-			ServerManager.board.myMaximumNeighboursToLive = serverManager.myInStream.readInt();
-			ServerManager.board.myNumberOfNeighboursToBeBorn = serverManager.myInStream.readInt();
+			ByteBuffer bufReader = ByteBuffer.allocate(Integer.BYTES);
+			socket.read(bufReader);			
+			ServerManager.board.myBoardWidth = bufReader.getInt();
+			socket.read(bufReader);			
 
-			ServerManager.board.myRefreshRateInMs = serverManager.myInStream.readFloat();
+			ServerManager.board.myBoardHeight = bufReader.getInt();
+			socket.read(bufReader);			
+
+			ServerManager.board.myMinimumNeighboursToLive = bufReader.getInt();
+			socket.read(bufReader);			
+
+			ServerManager.board.myMaximumNeighboursToLive = bufReader.getInt();
+			socket.read(bufReader);			
+
+			ServerManager.board.myNumberOfNeighboursToBeBorn = bufReader.getInt();
+
+			socket.read(bufReader);			
+
+			ServerManager.board.myRefreshRateInMs = bufReader.getFloat();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static byte[] createAGameUpdateMessage(ServerManager serverManager)
+	{
+		return null;
+	}
+
+	public static byte[] createFullBoardMessage(Board board) {
+		
+		int height = board.myBoardHeight;
+		int width = board.myBoardWidth;
+		
+		ByteBuffer message = ByteBuffer.allocate(Integer.BYTES + (height * width));
+		message.putInt(NetworkMessageType.NETWORK_MESSAGE_FULL_BOARD.getValue());
+
+		for(int row = 0; row < height; ++row)
+		{
+			for(int column = 0; column < width; ++column)
+			{
+				if(board.IsCelllivingAt(row, column))
+				{
+					message.put((byte) 1);
+				}
+				else
+				{
+					message.put((byte) 0);
+				}
+			}
+		}
+		
+		return message.array();
 	}
 }

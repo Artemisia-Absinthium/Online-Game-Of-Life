@@ -5,8 +5,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Random;
+
+import client.ClientManager;
 
 public class Board {
 	public int 		myBoardWidth;
@@ -98,7 +102,7 @@ public class Board {
 		}
 	}
 	
-	public void PlayATurn()
+	public ByteArrayOutputStream PlayATurn()
 	{
 		//
 		/// Creat a communication message
@@ -123,6 +127,7 @@ public class Board {
 		}
 		
 		UpdateBoardFromNetworkMessage(stream);
+		return stream;
 	}
 
 	private boolean WillCellChangeAt(int row, int column) {
@@ -190,5 +195,27 @@ public class Board {
 		}
 		
 		return myBoard.get(row).get(column);
+	}
+
+
+	public void UpdateFullBoardFromNetworkMessage(SocketChannel socket) {
+		ByteBuffer bufReader = ByteBuffer.allocate(myBoardHeight * myBoardWidth);
+		try {
+			socket.read(bufReader);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}			
+		
+		for(int row = 0; row < myBoardHeight; ++row)
+		{
+			for(int column = 0; column < myBoardWidth; ++column)
+			{
+				byte res = bufReader.get();
+				myBoard.get(row).set(column, res!=0);
+			}
+		}
+		System.out.println("FullBoardUpdated");
+
 	}
 }

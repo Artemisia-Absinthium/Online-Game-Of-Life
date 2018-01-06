@@ -3,8 +3,16 @@ package client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
+import common.Board;
+import common.BoardVisualisator;
 import common.GameCommunicationData;
 import common.GameUtility;
 import common.NetworkMessageType;
@@ -12,6 +20,7 @@ import common.NetworkMessageType;
 public class ClientNetworkInterface {
 
 	static void ConnectThePlayer(ClientManager clientManager) {
+
 		boolean notConnected = true;
 
 		//
@@ -89,17 +98,29 @@ public class ClientNetworkInterface {
 		try {
 			//
 			/// create the client socket, connect it to the server.
-			clientManager.myClientSocket = new Socket(clientManager.myServerAdress, clientManager.myServerPort);
+			clientManager.myClientSocketChannel = SocketChannel.open();
+			clientManager.myClientSocketChannel.connect(new InetSocketAddress(clientManager.myServerAdress, clientManager.myServerPort));
+			clientManager.myClientSocketChannel.configureBlocking(false);
 
 			//
-			/// create output and input stream attached to socket
-			clientManager.myOutStream = new DataOutputStream(clientManager.myClientSocket.getOutputStream());
-			clientManager.myInStream = new DataInputStream(clientManager.myClientSocket.getInputStream());
+			/// Ask for the last used port
+			clientManager.myClientServerSocketChannel = ServerSocketChannel.open();
+			clientManager.myClientServerSocketChannel.socket().bind(new InetSocketAddress(1830));
+			clientManager.myClientServerSocketChannel.configureBlocking(false);
+
 
 			//
 			/// Ask the server for the connection acception
-			clientManager.myOutStream.writeInt(NetworkMessageType.NETWORK_MESSAGE_CONNECT.getValue());
-			clientManager.myOutStream.flush();
+			
+			
+			ByteBuffer bufConnect = ByteBuffer.allocate(Integer.BYTES);
+			bufConnect.putInt(NetworkMessageType.NETWORK_MESSAGE_CONNECT.getValue());
+
+			bufConnect.flip();
+
+			while(bufConnect.hasRemaining()) {
+				clientManager.myClientSocketChannel.write(bufConnect);
+			}
 			System.out.println("CONNECTE Send");
 
 			//
@@ -107,26 +128,30 @@ public class ClientNetworkInterface {
 			int input;
 			boolean notAccepted = true;
 			while (notAccepted) {
-				try {
-					input = clientManager.myInStream.readInt();
-					NetworkMessageType msg = NetworkMessageType.values()[input];
-					if (msg == NetworkMessageType.NETWORK_MESSAGE_OK_NOT_STARTED)
-					{
-						notAccepted = false;
-						System.out.println("OK not started Received");
-					} 
-					else if (msg == NetworkMessageType.NETWORK_MESSAGE_OK_STARTED){
-						notAccepted = false;
-						System.out.println("OK started Received");
-						clientManager.myBoardStarted = true;
-					} 
-					else if (msg == NetworkMessageType.NETWORK_MESSAGE_KO)
-					{
-						return false;
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-					return false;
+				SocketChannel socket = clientManager.myClientServerSocketChannel.accept();
+				//outStream = new DataOutputStream(clientManager.myClientSocketChannel.socket().getOutputStream());
+	
+				if(null != socket)
+				{
+						ByteBuffer bufReader = ByteBuffer.allocate(Integer.BYTES);
+						socket.read(bufReader);			
+						input = bufReader.getInt();
+
+						NetworkMessageType msg = NetworkMessageType.values()[input];
+						if (msg == NetworkMessageType.NETWORK_MESSAGE_OK_NOT_STARTED)
+						{
+							notAccepted = false;
+							System.out.println("OK not started Received");
+						} 
+						else if (msg == NetworkMessageType.NETWORK_MESSAGE_OK_STARTED){
+							notAccepted = false;
+							System.out.println("OK started Received");
+							clientManager.myBoardStarted = true;
+						} 
+						else if (msg == NetworkMessageType.NETWORK_MESSAGE_KO)
+						{
+							return false;
+						}
 				}
 			}
 			System.out.println("Client accepted by the server");
@@ -159,12 +184,22 @@ public class ClientNetworkInterface {
 		byte[] startMessage =  GameCommunicationData.createAStartMessage(width, height, minLiving, maxLiving, nbForBirth, updateRate);
 
 		try {
-			clientManager.myOutStream.write(startMessage);
-			clientManager.myOutStream.flush();
+			ByteBuffer bufWritter = ByteBuffer.allocate(startMessage.length);
+			bufWritter.put(startMessage);
+
+			bufWritter.flip();
+
+			while(bufWritter.hasRemaining()) {
+				clientManager.myClientSocketChannel.write(bufWritter);
+			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		
+		//
+		/// Start the client board
+		clientManager.myGameBoard = new Board(width, height, minLiving, maxLiving, nbForBirth, updateRate);
 	}
 
 	private static int askForInt(String intName, ClientManager clientManager) {
@@ -230,26 +265,78 @@ public class ClientNetworkInterface {
 		
 		return number;
 	}
-	static void AskTheServerToStopAGame(ClientManager clientManager)
+	
+	
+static void AskTheServerToStopAGame(ClientManager clientManager)
 	{
 
 	}
 
 	static boolean ReceiveServerInfo(ClientManager clientManager)
 	{
+		int input = 0;
+		try {
+			System.out.println("TEST INFO");
+			SocketChannel socket = clientManager.myClientServerSocketChannel.accept();
+			//outStream = new DataOutputStream(clientManager.myClientSocketChannel.socket().getOutputStream());
 
+			if(null != socket)
+			{
+				ByteBuffer bufReader = ByteBuffer.allocate(Integer.BYTES);
+				socket.read(bufReader);			
+				input = bufReader.getInt();
+					
+				NetworkMessageType msg = NetworkMessageType.values()[input];
+				
+				if (msg == NetworkMessageType.NETWORK_MESSAGE_FULL_BOARD)
+				{
+					System.out.println("Server sended full board");
+					clientManager.myGameBoard.UpdateFullBoardFromNetworkMessage(socket);
+					
+					BoardVisualisator.printBoard(clientManager.myGameBoard);
+					System.out.flush();
+					
+					clientManager.QuitApp();
+				} 
+				else if (msg == NetworkMessageType.NETWORK_MESSAGE_BOARD_UPDATE_DATA)
+				{
+					System.out.println("Server sended infos");
+					return true;
+				} 
+				else if (msg == NetworkMessageType.NETWORK_MESSAGE_STOP){
+					System.out.println("Server stoped");
+					clientManager.QuitApp();
+					return true;
+				} 
+				else
+				{
+					System.out.println("Server sended nothing good");
+					return true;
+				}
+			}
+			System.out.println("TEST INFO 2");
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
+		}
 		return false;
 	}
 
-	static boolean IsConnected(ClientManager clientManager) {
-		return ((clientManager.myInStream != null) && (clientManager.myOutStream != null) && (clientManager.myClientSocket != null));
-	}
-
-	static void closeConnections(Socket socket) {
-		if (socket != null) {
+	static void closeConnections(ClientManager clientManager) {
+		if (clientManager.myClientServerSocketChannel != null) {
 			try {
-				socket.close();
-				socket = null;
+				clientManager.myClientServerSocketChannel.close();
+				clientManager.myClientServerSocketChannel = null;
+			}
+			catch (IOException exception) {
+				System.out.println("Couldn’t close socket:" + exception);
+			}
+		}
+		
+		if (clientManager.myClientSocketChannel != null) {
+			try {
+				clientManager.myClientSocketChannel.close();
+				clientManager.myClientSocketChannel = null;
 			}
 			catch (IOException exception) {
 				System.out.println("Couldn’t close socket:" + exception);

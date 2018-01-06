@@ -3,6 +3,9 @@ package client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.net.Socket;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.Scanner; 
 
 import common.Board;
@@ -18,7 +21,7 @@ public class ClientManager {
 	/// Class attributs
 	private boolean 	myClientRunning 	= false;
 	MenuManager 		myMenu				= new MenuManager();
-	private Board		myGameBoard			= new Board(15, 15, 2, 3, 3, 500.0f);
+	Board				myGameBoard			= new Board(15, 15, 2, 3, 3, 500.0f);
 	Scanner 			myScan 				= new Scanner(System.in);
 	boolean				myBoardStarted		= false;
 	
@@ -26,11 +29,10 @@ public class ClientManager {
 	/// Network attributs
 	String 				myServerAdress 	= null;
 	int 				myServerPort;
-	
-	DataInputStream 	myInStream 				= null;
-	DataOutputStream	myOutStream 			= null;
-	Socket 				myClientSocket 			= null;
-	
+
+	ServerSocketChannel 	myClientServerSocketChannel	= null;
+	SocketChannel 			myClientSocketChannel		= null;
+
 	//
 	/// game loop
 	public void MainLoop() {
@@ -58,8 +60,9 @@ public class ClientManager {
 		{
 			ClientNetworkInterface.AskTheServerToStartAGame(this);
 		}
-		
+				
 		myClientRunning = true;
+		System.out.println("CLient Running");
 		//
 		/// Launch the game loop
 		while(myClientRunning)
@@ -93,7 +96,6 @@ public class ClientManager {
 						String input = myScan.nextLine();
 						if(input.equalsIgnoreCase("exit"))
 						{
-							QuitApp();
 						}
 						else if(input.equalsIgnoreCase("c"))
 						{
@@ -116,7 +118,7 @@ public class ClientManager {
 	public void QuitApp()
 	{
 		myScan.close();
-		ClientNetworkInterface.closeConnections(myClientSocket);
+		ClientNetworkInterface.closeConnections(this);
 		System.exit(0);
 	}
 }
