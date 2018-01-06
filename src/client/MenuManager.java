@@ -49,6 +49,10 @@ public class MenuManager {
 				PrintWelcomeMenu();
 			}
 			break;
+			case PAUSE_MENU:
+			{
+				PrintPauseMenu();
+			}
 			case CONNECTION_MENU:
 			{
 				PrintWelcomeMenu();
@@ -58,6 +62,14 @@ public class MenuManager {
 		}
 	}
 	
+	private void PrintPauseMenu() {
+		System.out.println("..₪.₪.₪.₪...•..");
+		System.out.println("..₪.....₪...₪..");
+		System.out.println("..₪...₪.₪...₪..");
+		System.out.println("..₪...₪.....₪..");
+		System.out.println("..•...₪.₪.₪.₪..");
+	}
+
 	/**
 	 * Print the welcome menu
 	 */

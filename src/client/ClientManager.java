@@ -16,11 +16,12 @@ import common.Board;
 public class ClientManager {
 	//
 	/// Class attributs
-	private boolean 			myClientRunning 	= false;
+	private boolean 	myClientRunning 	= false;
 	MenuManager 		myMenu				= new MenuManager();
-	private Board				myGameBoard			= new Board(15, 15, 2, 3, 3, 500.0f);
+	private Board		myGameBoard			= new Board(15, 15, 2, 3, 3, 500.0f);
 	Scanner 			myScan 				= new Scanner(System.in);
-
+	boolean				myBoardStarted		= false;
+	
 	//
 	/// Network attributs
 	String 				myServerAdress 	= null;
@@ -51,24 +52,62 @@ public class ClientManager {
 		/// Connect the player to a server
 		ClientNetworkInterface.ConnectThePlayer(this);
 		
+		//
+		/// Send a game of life demand
+		if(!myBoardStarted)
+		{
+			ClientNetworkInterface.AskTheServerToStartAGame(this);
+		}
 		
-		ClientNetworkInterface.AskTheServerToStartAGame(this);
-		
+		myClientRunning = true;
 		//
 		/// Launch the game loop
 		while(myClientRunning)
 		{
 			//
-			/// TODO Print the server info
-			
-			//
-			/// TODO Check for a pause
-			
+			/// TODO Check the server info
+			if(ClientNetworkInterface.ReceiveServerInfo(this))
+			{
+				System.out.println("INFO Received");
+			}
+			else
+			{
+				//
+				/// TODO Check for a pause
+				if(myScan.hasNext())
+				{
+					System.out.println("PAUSE");
+					myScan.nextLine();
+
+					//
+					/// TODO send serve pause
+					
+					//
+					/// TODO Print pause menu and get input
+					// if()
+					boolean play = false;
+					while(!play)	
+					{
+						myMenu.PrintPage(MenuState.PAUSE_MENU);
+
+						String input = myScan.nextLine();
+						if(input.equalsIgnoreCase("exit"))
+						{
+							QuitApp();
+						}
+						else if(input.equalsIgnoreCase("c"))
+						{
+							play = true;
+							//
+							/// TODO send serve play
+						} 
+					}
+				}
 				//
 				/// Ask for pause command			
-				myClientRunning = false;			
+				// myClientRunning = false;		
+			}
 		}
-		
 		QuitApp();
 	}
 

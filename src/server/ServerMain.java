@@ -29,7 +29,7 @@ public class ServerMain {
 			try {
 				clientSocket = serverSocket.accept();
 			} catch (IOException e) {
-				System.out.println("I/O error: " + e);
+				e.printStackTrace();
 			}
 			// new thread for a client
 			new ServerManager(clientSocket).start();

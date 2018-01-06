@@ -12,6 +12,7 @@ public enum MenuState {
 	MAIN_MENU		("Main Menu"),
 	WELCOME_MENU	("Welcome menu"),
 	CREDIT_MENU		("Credit menu"), 
+	PAUSE_MENU		("Pause menu"), 
 	CONNECTION_MENU ("Connection menu");
 	
 	//

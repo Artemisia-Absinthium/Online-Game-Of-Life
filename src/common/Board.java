@@ -9,17 +9,23 @@ import java.util.ArrayList;
 import java.util.Random;
 
 public class Board {
-	private int 	myBoardWidth;
-	private int 	myBoardHeight;
-	private int		myMinimumNeighboursToLive; 
-	private int		myMaximumNeighboursToLive; 
-	private int		myNumberOfNeighboursToBeBorn;
-	private int		myBoardCurrentIteration;
-	private float 	myRefreshRateInMs;
-	private boolean	myLivingStatusOnBorder = false;
+	public int 		myBoardWidth;
+	public int 		myBoardHeight;
+	public int		myMinimumNeighboursToLive; 
+	public int		myMaximumNeighboursToLive; 
+	public int		myNumberOfNeighboursToBeBorn;
+	public int		myBoardCurrentIteration;
+	public float 	myRefreshRateInMs;
+	public boolean	myLivingStatusOnBorder = false;
 	
 	private	ArrayList<ArrayList<Boolean>> myBoard;
 	
+	public Board()
+	{
+		this(12, 12, 2, 3, 2, 500.0f);
+	}
+	
+
 	public Board(int width, int height, int minNeighbours, int maxNeighbours, int numberOfNeighboursToBeBorn, float boardRefreshRate)
 	{
 		myBoardWidth = width;
